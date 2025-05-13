@@ -46,12 +46,12 @@
     <thead>
       <tr>
         <th>Día</th>
-        <th>Mañana</th>
-        <th>Tarde</th>
+        <th>Mañana<br><small>(07:00 - 12:00)</small></th>
+        <th>Tarde<br><small>(13:00 - 19:00)</small></th>
       </tr>
     </thead>
     <tbody id="tabla-horarios">
-      <!-- Los campos se generan por JS -->
+      <!-- Campos generados por JS -->
     </tbody>
   </table>
 
@@ -86,19 +86,23 @@
       tbody.appendChild(fila);
     });
 
-    // Activar Flatpickr en todos los campos generados
+    // Activar Flatpickr con límites por franja horaria
     dias.forEach((_, index) => {
       flatpickr(`#hora-${index}-manana`, {
         enableTime: true,
         noCalendar: true,
         dateFormat: "H:i",
-        time_24hr: true
+        time_24hr: true,
+        minTime: "07:00",
+        maxTime: "12:00"
       });
       flatpickr(`#hora-${index}-tarde`, {
         enableTime: true,
         noCalendar: true,
         dateFormat: "H:i",
-        time_24hr: true
+        time_24hr: true,
+        minTime: "13:00",
+        maxTime: "19:00"
       });
     });
   </script>
