@@ -1,22 +1,22 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Horario Semanal</title>
-
-  <!-- Flatpickr CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-
   <style>
     body {
       font-family: Arial, sans-serif;
       padding: 20px;
       background-color: #f5f5f5;
+      user-select: none;
     }
 
     h1 {
       text-align: center;
+      user-select: none;
     }
 
     table {
@@ -24,26 +24,40 @@
       border-collapse: collapse;
       background-color: #fff;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      user-select: none;
     }
 
     th, td {
       padding: 10px 15px;
       border: 1px solid #ddd;
       text-align: center;
+      user-select: none;
     }
 
     input[type="text"] {
       padding: 5px;
-      width: 100%; /* Responsivo */
+      width: 100%;
       text-align: center;
-      box-sizing: border-box; /* Asegura que el padding no cause desbordamiento */
+      box-sizing: border-box;
+      user-select: text; /* Permite seleccionar solo si se mantiene apretado */
     }
 
     .hidden {
       display: none;
     }
 
-    /* Para que la tabla se vea bien en dispositivos móviles */
+    #enviar-btn {
+      display: block;
+      margin: 20px auto 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
     @media (max-width: 768px) {
       table {
         width: 100%;
@@ -54,20 +68,15 @@
         font-size: 14px;
       }
 
-      .enviar-btn {
+      #enviar-btn {
         width: 100%;
-        padding: 10px;
-        margin-top: 15px;
-        font-size: 16px;
-        background-color: #4CAF50;
-        color: white;
-        border: none;
-        cursor: pointer;
       }
+    }
 
-      .enviar-btn:disabled {
-        background-color: #ddd;
-      }
+    #error-msg {
+      text-align: center;
+      color: red;
+      font-size: 14px;
     }
   </style>
 </head>
@@ -87,17 +96,14 @@
     </tbody>
   </table>
 
-  <button id="enviar-btn" class="enviar-btn">Enviar</button>
-  <p id="error-msg" class="hidden" style="color: red; text-align: center;">Por favor, asegúrate de que todos los horarios estén bien configurados en formato 24 horas (00:00).</p>
+  <button id="enviar-btn">Enviar</button>
+  <p id="error-msg" class="hidden">Formato incorrecto. Usá formato 24h como 08:30, 14:45, etc.</p>
 
-  <!-- Flatpickr JS -->
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-
   <script>
     const dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
     const tbody = document.getElementById("tabla-horarios");
 
-    // Generar los campos de hora
     dias.forEach((dia, index) => {
       const fila = document.createElement("tr");
 
@@ -122,80 +128,64 @@
       tbody.appendChild(fila);
     });
 
-    // Activar Flatpickr con límites por franja horaria
     dias.forEach((_, index) => {
+      const commonOptions = {
+        enableTime: true,
+        noCalendar: true,
+        dateFormat: "H:i",
+        time_24hr: true,
+        disableMobile: true,
+        position: "below", // Siempre mostrar abajo
+      };
+
       flatpickr(`#hora-${index}-manana`, {
-        enableTime: true,
-        noCalendar: true,
-        dateFormat: "H:i",
-        time_24hr: true,
+        ...commonOptions,
         minTime: "07:00",
-        maxTime: "12:00",
-        disableMobile: true // En dispositivos móviles, usa la interfaz de Flatpickr
+        maxTime: "12:00"
       });
+
       flatpickr(`#hora-${index}-tarde`, {
-        enableTime: true,
-        noCalendar: true,
-        dateFormat: "H:i",
-        time_24hr: true,
+        ...commonOptions,
         minTime: "13:00",
-        maxTime: "19:00",
-        disableMobile: true // En dispositivos móviles, usa la interfaz de Flatpickr
+        maxTime: "19:00"
       });
     });
 
-    // Botón "Enviar" siempre activo, pero con validación de horas
     const enviarBtn = document.getElementById("enviar-btn");
     const errorMsg = document.getElementById("error-msg");
 
-    // Verificar si los horarios son válidos
-    function verificarHorarioValido() {
-      let todosCorrectos = true;
+    function validarHorarios() {
+      let errorFormato = false;
+      const regexHora = /^([01]?[0-9]|2[0-3]):([0-5][0-9])$/;
 
       dias.forEach((_, index) => {
-        const mananaInput = document.getElementById(`hora-${index}-manana`).value;
-        const tardeInput = document.getElementById(`hora-${index}-tarde`).value;
+        const manana = document.getElementById(`hora-${index}-manana`).value;
+        const tarde = document.getElementById(`hora-${index}-tarde`).value;
 
-        // Verifica que los horarios estén en formato de 24 horas (HH:MM)
-        const regexHora = /^([01]?[0-9]|2[0-3]):([0-5][0-9])$/;
-        if (!regexHora.test(mananaInput) || !regexHora.test(tardeInput)) {
-          todosCorrectos = false;
+        if ((manana && !regexHora.test(manana)) || (tarde && !regexHora.test(tarde))) {
+          errorFormato = true;
         }
       });
 
-      if (todosCorrectos) {
-        errorMsg.classList.add("hidden");
-        enviarBtn.disabled = false;
-      } else {
+      if (errorFormato) {
         errorMsg.classList.remove("hidden");
-        enviarBtn.disabled = true;
+      } else {
+        errorMsg.classList.add("hidden");
+        // Si querés mostrar los datos válidos:
+        const horarios = dias.map((_, index) => ({
+          dia: dias[index],
+          manana: document.getElementById(`hora-${index}-manana`).value,
+          tarde: document.getElementById(`hora-${index}-tarde`).value
+        }));
+        alert("Horarios enviados:\n" + JSON.stringify(horarios, null, 2));
       }
     }
 
-    // Verificar cada vez que el usuario cambie la hora
-    dias.forEach((_, index) => {
-      document.getElementById(`hora-${index}-manana`).addEventListener('change', verificarHorarioValido);
-      document.getElementById(`hora-${index}-tarde`).addEventListener('change', verificarHorarioValido);
-    });
-
-    // Acción al hacer clic en el botón "Enviar"
-    enviarBtn.addEventListener("click", () => {
-      const horarios = [];
-      dias.forEach((_, index) => {
-        const mananaInput = document.getElementById(`hora-${index}-manana`).value;
-        const tardeInput = document.getElementById(`hora-${index}-tarde`).value;
-        horarios.push({ manana: mananaInput, tarde: tardeInput });
-      });
-      alert("Horarios enviados:\n" + JSON.stringify(horarios, null, 2));
-    });
-
+    enviarBtn.addEventListener("click", validarHorarios);
   </script>
-
 </body>
 </html>
 
-
-  </script>
 
 </body>
 </html>
