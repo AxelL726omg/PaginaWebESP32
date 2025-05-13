@@ -34,9 +34,19 @@
 
     input[type="text"] {
       padding: 5px;
-      width: 100px;
+      width: 100%; /* Responsivo en dispositivos móviles */
       text-align: center;
+      box-sizing: border-box; /* Asegura que el padding no cause desbordamiento */
     }
+
+    /* Para que la tabla se vea bien en dispositivos móviles */
+    @media (max-width: 768px) {
+      table {
+        width: 100%;
+        font-size: 14px;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -94,7 +104,8 @@
         dateFormat: "H:i",
         time_24hr: true,
         minTime: "07:00",
-        maxTime: "12:00"
+        maxTime: "12:00",
+        disableMobile: false // Asegura que funcione también en móviles
       });
       flatpickr(`#hora-${index}-tarde`, {
         enableTime: true,
@@ -102,9 +113,15 @@
         dateFormat: "H:i",
         time_24hr: true,
         minTime: "13:00",
-        maxTime: "19:00"
+        maxTime: "19:00",
+        disableMobile: false // Asegura que funcione también en móviles
       });
     });
+  </script>
+
+</body>
+</html>
+
   </script>
 
 </body>
