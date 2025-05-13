@@ -87,8 +87,8 @@
     </tbody>
   </table>
 
-  <button id="enviar-btn" class="enviar-btn hidden">Enviar</button>
-  <p id="error-msg" class="hidden" style="color: red; text-align: center;">Por favor, asegúrate de seleccionar un horario válido en formato 24 horas (00:00).</p>
+  <button id="enviar-btn" class="enviar-btn">Enviar</button>
+  <p id="error-msg" class="hidden" style="color: red; text-align: center;">Por favor, asegúrate de que todos los horarios estén bien configurados en formato 24 horas (00:00).</p>
 
   <!-- Flatpickr JS -->
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
@@ -97,6 +97,7 @@
     const dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
     const tbody = document.getElementById("tabla-horarios");
 
+    // Generar los campos de hora
     dias.forEach((dia, index) => {
       const fila = document.createElement("tr");
 
@@ -130,7 +131,7 @@
         time_24hr: true,
         minTime: "07:00",
         maxTime: "12:00",
-        disableMobile: false // Asegura que funcione también en móviles
+        disableMobile: true // En dispositivos móviles, usa la interfaz de Flatpickr
       });
       flatpickr(`#hora-${index}-tarde`, {
         enableTime: true,
@@ -139,17 +140,18 @@
         time_24hr: true,
         minTime: "13:00",
         maxTime: "19:00",
-        disableMobile: false // Asegura que funcione también en móviles
+        disableMobile: true // En dispositivos móviles, usa la interfaz de Flatpickr
       });
     });
 
-    // Activar botón de Enviar solo en dispositivos móviles si todo está bien
+    // Botón "Enviar" siempre activo, pero con validación de horas
     const enviarBtn = document.getElementById("enviar-btn");
     const errorMsg = document.getElementById("error-msg");
 
-    function verificarFormatoHoras() {
-      let todoCorrecto = true;
-      
+    // Verificar si los horarios son válidos
+    function verificarHorarioValido() {
+      let todosCorrectos = true;
+
       dias.forEach((_, index) => {
         const mananaInput = document.getElementById(`hora-${index}-manana`).value;
         const tardeInput = document.getElementById(`hora-${index}-tarde`).value;
@@ -157,31 +159,41 @@
         // Verifica que los horarios estén en formato de 24 horas (HH:MM)
         const regexHora = /^([01]?[0-9]|2[0-3]):([0-5][0-9])$/;
         if (!regexHora.test(mananaInput) || !regexHora.test(tardeInput)) {
-          todoCorrecto = false;
+          todosCorrectos = false;
         }
       });
 
-      if (todoCorrecto) {
-        enviarBtn.classList.remove("hidden");
+      if (todosCorrectos) {
         errorMsg.classList.add("hidden");
         enviarBtn.disabled = false;
       } else {
-        enviarBtn.classList.add("hidden");
         errorMsg.classList.remove("hidden");
         enviarBtn.disabled = true;
       }
     }
 
-    // Verificar en cuanto el usuario cambie el valor de algún input
+    // Verificar cada vez que el usuario cambie la hora
     dias.forEach((_, index) => {
-      document.getElementById(`hora-${index}-manana`).addEventListener('change', verificarFormatoHoras);
-      document.getElementById(`hora-${index}-tarde`).addEventListener('change', verificarFormatoHoras);
+      document.getElementById(`hora-${index}-manana`).addEventListener('change', verificarHorarioValido);
+      document.getElementById(`hora-${index}-tarde`).addEventListener('change', verificarHorarioValido);
     });
 
     // Acción al hacer clic en el botón "Enviar"
     enviarBtn.addEventListener("click", () => {
-      alert("Horarios enviados correctamente.");
+      const horarios = [];
+      dias.forEach((_, index) => {
+        const mananaInput = document.getElementById(`hora-${index}-manana`).value;
+        const tardeInput = document.getElementById(`hora-${index}-tarde`).value;
+        horarios.push({ manana: mananaInput, tarde: tardeInput });
+      });
+      alert("Horarios enviados:\n" + JSON.stringify(horarios, null, 2));
     });
+
+  </script>
+
+</body>
+</html>
+
 
   </script>
 
