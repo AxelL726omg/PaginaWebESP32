@@ -4,6 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Horario Semanal</title>
+
+  <!-- Flatpickr CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -28,8 +32,10 @@
       text-align: center;
     }
 
-    select {
+    input[type="text"] {
       padding: 5px;
+      width: 100px;
+      text-align: center;
     }
   </style>
 </head>
@@ -44,41 +50,58 @@
         <th>Tarde</th>
       </tr>
     </thead>
-    <tbody>
-      <!-- Días de la semana -->
-      <script>
-        const dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
-        const horas = ["00", "01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23"];
-        const minutos = ["00", "15", "30", "45"];
-
-        function crearSelect(opciones) {
-          let select = '<select>';
-          select += '<option value="">--Seleccionar--</option>';
-          opciones.forEach(opcion => {
-            select += `<option value="${opcion}">${opcion}</option>`;
-          });
-          select += '</select>';
-          return select;
-        }
-
-        function crearHoraSelect() {
-          return crearSelect(horas);
-        }
-
-        function crearMinutoSelect() {
-          return crearSelect(minutos);
-        }
-
-        dias.forEach(dia => {
-          document.write('<tr>');
-          document.write(`<td>${dia}</td>`);
-          document.write(`<td>${crearHoraSelect()} : ${crearMinutoSelect()}</td>`);
-          document.write(`<td>${crearHoraSelect()} : ${crearMinutoSelect()}</td>`);
-          document.write('</tr>');
-        });
-      </script>
+    <tbody id="tabla-horarios">
+      <!-- Los campos se generan por JS -->
     </tbody>
   </table>
+
+  <!-- Flatpickr JS -->
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+  <script>
+    const dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+    const tbody = document.getElementById("tabla-horarios");
+
+    dias.forEach((dia, index) => {
+      const fila = document.createElement("tr");
+
+      const celdaDia = document.createElement("td");
+      celdaDia.textContent = dia;
+      fila.appendChild(celdaDia);
+
+      const celdaManana = document.createElement("td");
+      const inputManana = document.createElement("input");
+      inputManana.type = "text";
+      inputManana.id = `hora-${index}-manana`;
+      celdaManana.appendChild(inputManana);
+      fila.appendChild(celdaManana);
+
+      const celdaTarde = document.createElement("td");
+      const inputTarde = document.createElement("input");
+      inputTarde.type = "text";
+      inputTarde.id = `hora-${index}-tarde`;
+      celdaTarde.appendChild(inputTarde);
+      fila.appendChild(celdaTarde);
+
+      tbody.appendChild(fila);
+    });
+
+    // Activar Flatpickr en todos los campos generados
+    dias.forEach((_, index) => {
+      flatpickr(`#hora-${index}-manana`, {
+        enableTime: true,
+        noCalendar: true,
+        dateFormat: "H:i",
+        time_24hr: true
+      });
+      flatpickr(`#hora-${index}-tarde`, {
+        enableTime: true,
+        noCalendar: true,
+        dateFormat: "H:i",
+        time_24hr: true
+      });
+    });
+  </script>
 
 </body>
 </html>
