@@ -169,6 +169,12 @@
       console.error("❌ Error de conexión MQTT:", err);
     });
 
+    // Verificar mensaje enviado y recibido en consola
+    mqttClient.on("message", (topic, message) => {
+      console.log(`✅ Mensaje recibido en topic: ${topic}`);
+      console.log(`Mensaje: ${message.toString()}`);
+    });
+
     function validarHorariosYPublicar() {
       const regexHora = /^([01]?[0-9]|2[0-3]):([0-5][0-9])$/;
       let errorFormato = false;
@@ -194,8 +200,24 @@
         const manana = document.getElementById(`hora-${index}-manana`).value;
         const tarde = document.getElementById(`hora-${index}-tarde`).value;
 
-        if (manana) mqttClient.publish(`dia/${dia}/mañana`, manana);
-        if (tarde) mqttClient.publish(`dia/${dia}/tarde`, tarde);
+        if (manana) {
+          mqttClient.publish(`dia/${dia}/mañana`, manana, {}, (error) => {
+            if (error) {
+              console.error(`❌ Error al enviar en el topic dia/${dia}/mañana`);
+            } else {
+              console.log(`✅ Enviado correctamente en el topic dia/${dia}/mañana: ${manana}`);
+            }
+          });
+        }
+        if (tarde) {
+          mqttClient.publish(`dia/${dia}/tarde`, tarde, {}, (error) => {
+            if (error) {
+              console.error(`❌ Error al enviar en el topic dia/${dia}/tarde`);
+            } else {
+              console.log(`✅ Enviado correctamente en el topic dia/${dia}/tarde: ${tarde}`);
+            }
+          });
+        }
       });
     }
 
