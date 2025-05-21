@@ -1,56 +1,234 @@
-function convertirAHoraFormato(hora) {
-  // La hora está en formato 'HH:MM' (por ejemplo, '11:00'). La vamos a convertir a 'HHMM' (por ejemplo, '1100').
-  const partes = hora.split(':');
-  return partes[0].padStart(2, '0') + partes[1].padStart(2, '0');
-}
-
-function validarHorariosYPublicar() {
-  const regexHora = /^([01]?[0-9]|2[0-3]):([0-5][0-9])$/;
-  let errorFormato = false;
-
-  dias.forEach((dia, index) => {
-    const manana = document.getElementById(`hora-${index}-manana`).value;
-    const tarde = document.getElementById(`hora-${index}-tarde`).value;
-
-    if ((manana && !regexHora.test(manana)) || (tarde && !regexHora.test(tarde))) {
-      errorFormato = true;
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Horario Semanal</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: #f5f5f5;
+      user-select: none;
     }
-  });
 
-  if (errorFormato) {
-    errorMsg.classList.remove("hidden");
-    return;
-  }
+    h1 {
+      text-align: center;
+      user-select: none;
+    }
 
-  errorMsg.classList.add("hidden");
+    table {
+      margin: auto;
+      border-collapse: collapse;
+      background-color: #fff;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      user-select: none;
+    }
 
-  // Publicar cada horario válido en MQTT
-  dias.forEach((dia, index) => {
-    const manana = document.getElementById(`hora-${index}-manana`).value;
-    const tarde = document.getElementById(`hora-${index}-tarde`).value;
+    th, td {
+      padding: 10px 15px;
+      border: 1px solid #ddd;
+      text-align: center;
+      user-select: none;
+    }
 
-    if (manana) {
-      const horaManana = convertirAHoraFormato(manana);
-      mqttClient.publish(`dia/${dia}/mañana`, horaManana, {}, (error) => {
-        if (error) {
-          console.error(`❌ Error al enviar en el topic dia/${dia}/mañana`);
-        } else {
-          console.log(`✅ Enviado correctamente en el topic dia/${dia}/mañana: ${horaManana}`);
+    input[type="text"] {
+      padding: 5px;
+      width: 100%;
+      text-align: center;
+      box-sizing: border-box;
+      user-select: text;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    #enviar-btn {
+      display: block;
+      margin: 20px auto 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    @media (max-width: 768px) {
+      table {
+        width: 100%;
+        font-size: 14px;
+      }
+
+      input[type="text"] {
+        font-size: 14px;
+      }
+
+      #enviar-btn {
+        width: 100%;
+      }
+    }
+
+    #error-msg {
+      text-align: center;
+      color: red;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Seleccioná tus horarios</h1>
+  <table>
+    <thead>
+      <tr>
+        <th>Día</th>
+        <th>Mañana<br><small>(07:00 - 12:00)</small></th>
+        <th>Tarde<br><small>(13:00 - 19:00)</small></th>
+      </tr>
+    </thead>
+    <tbody id="tabla-horarios"></tbody>
+  </table>
+
+  <button id="enviar-btn">Enviar</button>
+  <p id="error-msg" class="hidden">Formato incorrecto. Usá formato 24h como 08:30, 14:45, etc.</p>
+
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+  <script>
+    const dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+    const tbody = document.getElementById("tabla-horarios");
+
+    dias.forEach((dia, index) => {
+      const fila = document.createElement("tr");
+
+      const celdaDia = document.createElement("td");
+      celdaDia.textContent = dia;
+      fila.appendChild(celdaDia);
+
+      const celdaManana = document.createElement("td");
+      const inputManana = document.createElement("input");
+      inputManana.type = "text";
+      inputManana.id = `hora-${index}-manana`;
+      celdaManana.appendChild(inputManana);
+      fila.appendChild(celdaManana);
+
+      const celdaTarde = document.createElement("td");
+      const inputTarde = document.createElement("input");
+      inputTarde.type = "text";
+      inputTarde.id = `hora-${index}-tarde`;
+      celdaTarde.appendChild(inputTarde);
+      fila.appendChild(celdaTarde);
+
+      tbody.appendChild(fila);
+    });
+
+    dias.forEach((_, index) => {
+      const commonOptions = {
+        enableTime: true,
+        noCalendar: true,
+        dateFormat: "H:i",
+        time_24hr: true,
+        disableMobile: true,
+        position: "below",
+      };
+
+      flatpickr(`#hora-${index}-manana`, {
+        ...commonOptions,
+        minTime: "07:00",
+        maxTime: "12:00"
+      });
+
+      flatpickr(`#hora-${index}-tarde`, {
+        ...commonOptions,
+        minTime: "13:00",
+        maxTime: "19:00"
+      });
+    });
+
+    const enviarBtn = document.getElementById("enviar-btn");
+    const errorMsg = document.getElementById("error-msg");
+
+    // === MQTT CONFIGURACIÓN ===
+    const MQTT_BROKER = "wss://mqtt.flespi.io:443";
+    const MQTT_TOKEN = "WE5ug92S0I6wxZXBrSgVn4zaYkcv0nEgnvTTBird4ATm5djaxGN90dt1XFpWogtx"; // Reemplaza esto con tu token real
+    const mqttClient = mqtt.connect(MQTT_BROKER, {
+      username: MQTT_TOKEN,
+      password: "",
+      reconnectPeriod: 3000
+    });
+
+    mqttClient.on("connect", () => {
+      console.log("✅ Conectado al broker MQTT");
+    });
+
+    mqttClient.on("error", (err) => {
+      console.error("❌ Error de conexión MQTT:", err);
+    });
+
+    // Verificar mensaje enviado y recibido en consola
+    mqttClient.on("message", (topic, message) => {
+      console.log(`✅ Mensaje recibido en topic: ${topic}`);
+      console.log(`Mensaje: ${message.toString()}`);
+    });
+
+    // Convertir la hora a formato HHMM
+    function convertirAHoraFormato(hora) {
+      const partes = hora.split(':');
+      return partes[0].padStart(2, '0') + partes[1].padStart(2, '0');
+    }
+
+    function validarHorariosYPublicar() {
+      const regexHora = /^([01]?[0-9]|2[0-3]):([0-5][0-9])$/;
+      let errorFormato = false;
+
+      dias.forEach((dia, index) => {
+        const manana = document.getElementById(`hora-${index}-manana`).value;
+        const tarde = document.getElementById(`hora-${index}-tarde`).value;
+
+        if ((manana && !regexHora.test(manana)) || (tarde && !regexHora.test(tarde))) {
+          errorFormato = true;
+        }
+      });
+
+      if (errorFormato) {
+        errorMsg.classList.remove("hidden");
+        return;
+      }
+
+      errorMsg.classList.add("hidden");
+
+      // Publicar cada horario válido en MQTT
+      dias.forEach((dia, index) => {
+        const manana = document.getElementById(`hora-${index}-manana`).value;
+        const tarde = document.getElementById(`hora-${index}-tarde`).value;
+
+        if (manana) {
+          const horaManana = convertirAHoraFormato(manana);
+          mqttClient.publish(`dia/${dia}/mañana`, horaManana, {}, (error) => {
+            if (error) {
+              console.error(`❌ Error al enviar en el topic dia/${dia}/mañana`);
+            } else {
+              console.log(`✅ Enviado correctamente en el topic dia/${dia}/mañana: ${horaManana}`);
+            }
+          });
+        }
+        if (tarde) {
+          const horaTarde = convertirAHoraFormato(tarde);
+          mqttClient.publish(`dia/${dia}/tarde`, horaTarde, {}, (error) => {
+            if (error) {
+              console.error(`❌ Error al enviar en el topic dia/${dia}/tarde`);
+            } else {
+              console.log(`✅ Enviado correctamente en el topic dia/${dia}/tarde: ${horaTarde}`);
+            }
+          });
         }
       });
     }
-    if (tarde) {
-      const horaTarde = convertirAHoraFormato(tarde);
-      mqttClient.publish(`dia/${dia}/tarde`, horaTarde, {}, (error) => {
-        if (error) {
-          console.error(`❌ Error al enviar en el topic dia/${dia}/tarde`);
-        } else {
-          console.log(`✅ Enviado correctamente en el topic dia/${dia}/tarde: ${horaTarde}`);
-        }
-      });
-    }
-  });
-}
+
     enviarBtn.addEventListener("click", validarHorariosYPublicar);
   </script>
 </body>
