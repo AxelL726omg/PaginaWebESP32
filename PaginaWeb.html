@@ -87,8 +87,8 @@
     <thead>
       <tr>
         <th>Día</th>
-        <th>Mañana<br><small>(07:00 - 12:00)</small></th>
-        <th>Tarde<br><small>(12:00 - 19:00)</small></th> <!-- MODIFICADO -->
+        <th>Mañana<br><small>(00:00 - 12:00)</small></th>
+        <th>Tarde<br><small>(12:00 - 00:00)</small></th>
       </tr>
     </thead>
     <tbody id="tabla-horarios"></tbody>
@@ -139,14 +139,14 @@
 
       flatpickr(`#hora-${index}-manana`, {
         ...commonOptions,
-        minTime: "07:00",
+        minTime: "00:00",
         maxTime: "12:00"
       });
 
       flatpickr(`#hora-${index}-tarde`, {
         ...commonOptions,
-        minTime: "12:01", // MODIFICADO
-        maxTime: "19:00"
+        minTime: "12:01",
+        maxTime: "23:59"
       });
     });
 
