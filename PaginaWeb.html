@@ -88,7 +88,7 @@
       <tr>
         <th>Día</th>
         <th>Mañana<br><small>(07:00 - 12:00)</small></th>
-        <th>Tarde<br><small>(13:00 - 19:00)</small></th>
+        <th>Tarde<br><small>(12:00 - 19:00)</small></th> <!-- MODIFICADO -->
       </tr>
     </thead>
     <tbody id="tabla-horarios"></tbody>
@@ -145,7 +145,7 @@
 
       flatpickr(`#hora-${index}-tarde`, {
         ...commonOptions,
-        minTime: "13:00",
+        minTime: "12:01", // MODIFICADO
         maxTime: "19:00"
       });
     });
@@ -170,13 +170,11 @@
       console.error("❌ Error de conexión MQTT:", err);
     });
 
-    // Verificar mensaje enviado y recibido en consola
     mqttClient.on("message", (topic, message) => {
       console.log(`✅ Mensaje recibido en topic: ${topic}`);
       console.log(`Mensaje: ${message.toString()}`);
     });
 
-    // Convertir la hora a formato HHMM
     function convertirAHoraFormato(hora) {
       const partes = hora.split(':');
       return partes[0].padStart(2, '0') + partes[1].padStart(2, '0');
@@ -202,7 +200,6 @@
 
       errorMsg.classList.add("hidden");
 
-      // Publicar cada horario válido en MQTT
       dias.forEach((dia, index) => {
         const manana = document.getElementById(`hora-${index}-manana`).value;
         const tarde = document.getElementById(`hora-${index}-tarde`).value;
@@ -228,8 +225,8 @@
           });
         }
       });
-        // 🔄 Redirige a la página de agradecimiento
-  window.location.href = "https://axell726omg.github.io/PaginaWebESP32/PaginaWeb2.html";
+
+      window.location.href = "https://axell726omg.github.io/PaginaWebESP32/PaginaWeb2.html";
     }
 
     enviarBtn.addEventListener("click", validarHorariosYPublicar);
